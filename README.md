@@ -4,7 +4,6 @@
 > A small programming language made with [Scala](https://scala-lang.org) and [ANTLR](https://antlr.org).
 
 This is a simple programming language that has only one loop instruction (while) and a single type (integer).
-We want to show that you can make a programming language with a only few lines of code.
 
 ## Examples
 Here are some examples:
