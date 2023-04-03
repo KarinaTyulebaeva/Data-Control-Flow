@@ -1,4 +1,4 @@
-# While language
+# Whilelang Available Expression Analyse
 
 
 > A small programming language made with [Scala](https://scala-lang.org) and [ANTLR](https://antlr.org).
