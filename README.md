@@ -90,7 +90,4 @@ sbt> compile
 
 # To run the interpreter
 sbt> runMain whilelang.interpreter.main sum.while
-
-# To run the transpiler
-sbt> runMain whilelang.compiler.main sum.while
 ````
