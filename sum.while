@@ -1,0 +1,8 @@
+a := 1; f
+b := 0; f
+c := a + b; f
+while 4 = a + b do { t
+  while 3 = a + b do { t
+    a := a + b t
+  }
+}

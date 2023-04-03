@@ -1,0 +1,17 @@
+a := 1; f
+b := 2; f
+c := a + b; f
+while (4 = a + b) do{ f
+if ( 4 = a + b) then { t
+  a := 0; f
+  d := a + c f
+}
+else {
+  a := 0; f
+  d := a + 2 f
+}
+};
+e := a + c f
+
+
+
