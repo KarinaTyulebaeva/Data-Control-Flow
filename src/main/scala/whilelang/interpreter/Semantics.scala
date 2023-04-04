@@ -114,7 +114,21 @@ extension (stmt: Statement)(using env: Map[String, Int])
 
   def checkAvailabilityForLoop(condition: Bool, body: List[(Node, Boolean)]): (List[(Node, Boolean)], Boolean) =
     val before = checkAvailabilityForBool(condition)
-    val newBody = body.map {
+    val newBody = List(body.map {
+      case elem@(Assignment(id, value), _) => (elem._1, checkAvailabilityForAssignment(id, value))
+      case elem@(Condition(condition, left, right), _) =>
+        val (res, newLeft, newRight) = checkAvailabilityForCondition(condition, left, right)
+        (Condition(condition, newLeft, newRight), res)
+      case elem@(Loop(cond, elems), _) =>
+        val (newElems, res) = checkAvailabilityForLoop(cond, elems)
+        (Loop(cond, newElems), res)
+      case elem => elem
+    }).map(recursivelyCheckLoop).head
+    val after = checkAvailabilityForBool(condition)
+    (newBody, before && after)
+
+  def recursivelyCheckLoop(body: List[(Node, Boolean)]): List[(Node, Boolean)] =
+    body.map {
       case elem@(Assignment(id, value), _) => (elem._1, checkAvailabilityForAssignment(id, value))
       case elem@(Condition(condition, left, right), _) =>
         val (res, newLeft, newRight) = checkAvailabilityForCondition(condition, left, right)
@@ -124,8 +138,6 @@ extension (stmt: Statement)(using env: Map[String, Int])
         (Loop(cond, newElems), res)
       case elem => elem
     }
-    val after = checkAvailabilityForBool(condition)
-    (newBody, before && after)
 
   def removeAvailability(id: String): Unit =
     val newAvailability = availability.filter { elem =>
