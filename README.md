@@ -79,7 +79,7 @@ Space: [ \t\n\r] -> skip;
 ````
 ---
 
-## Compiling & Running
+## Compiling & Testing
 
 To compile you need to install [sbt](https://www.scala-sbt.org/). 
 ````shell
