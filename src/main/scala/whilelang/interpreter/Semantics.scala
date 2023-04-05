@@ -47,24 +47,48 @@ extension (stmt: Statement)(using env: Map[String, Int])
     case Skip | _ => List((DoesNotChangeAvailability("empty"), false))
 
   def checkAvailability(program: List[(Node, Boolean)]): List[(Node, Boolean)] =
-    program.map { line =>
+    val a = program.map { line =>
       line match
-        case (Assignment(id, value), _) => (line._1, checkAvailabilityForAssignment(id, value))
+        case (Assignment(id, value), _) =>
+          val aboba = availability
+          val a = (line._1, checkAvailabilityForAssignment(id, value))
+          println(s"$a $aboba")
+          a
         case (Condition(condition, left, right), _) =>
+          val aboba = availability
           val (res, newLeft, newRight) = checkAvailabilityForCondition(condition, left, right)
-          (Condition(condition, newLeft, newRight), res)
-        case (Loop(condition, body), _) =>
-          val (newBody, res) = checkAvailabilityForLoop(condition, body)
-          (Loop(condition, newBody), res)
 
-        case (DoesNotChangeAvailability(_), _) => line
-        case _ => line
+          val a = (Condition(condition, newLeft, newRight), res)
+          println(s"$a $aboba")
+          a
+
+        case (Loop(condition, body), _) =>
+          val aboba = availability
+          val (newBody, res) = checkAvailabilityForLoop(condition, body)
+
+          val a = (Loop(condition, newBody), res)
+          println(s"$a $availability")
+          a
+
+        case (DoesNotChangeAvailability(_), _) =>
+          println(s"$line $availability")
+          line
+        case _ =>
+          println(s"$line $availability")
+          line
     }
+    a
 
   def checkAvailabilityForBool(value: Bool): Boolean =
     value match {
-      case ExpEq(l, r) => isAvailable(r)
-      case ExpLe(l, r) => isAvailable(r)
+      case ExpEq(l, r) =>
+        val a = isAvailable(r)
+        availability.addOne(r)
+        a
+      case ExpLe(l, r) =>
+        val a = isAvailable(r)
+        availability.addOne(r)
+        a
       case _ => true
     }
 
@@ -113,31 +137,71 @@ extension (stmt: Statement)(using env: Map[String, Int])
   }
 
   def checkAvailabilityForLoop(condition: Bool, body: List[(Node, Boolean)]): (List[(Node, Boolean)], Boolean) =
+    val aBefore = availability
     val before = checkAvailabilityForBool(condition)
+    println(s"$condition $aBefore")
     val newBody = List(body.map {
-      case elem@(Assignment(id, value), _) => (elem._1, checkAvailabilityForAssignment(id, value))
+      case elem@(Assignment(id, value), _) =>
+        val aboba = availability
+        val a = (elem._1, checkAvailabilityForAssignment(id, value))
+        println(s"$a $aboba")
+        a
       case elem@(Condition(condition, left, right), _) =>
+        val aboba = availability
         val (res, newLeft, newRight) = checkAvailabilityForCondition(condition, left, right)
-        (Condition(condition, newLeft, newRight), res)
+        val a =(Condition(condition, newLeft, newRight), res)
+        println(s"$a $aboba")
+        a
       case elem@(Loop(cond, elems), _) =>
+        val aboba = availability
         val (newElems, res) = checkAvailabilityForLoop(cond, elems)
-        (Loop(cond, newElems), res)
-      case elem => elem
-    }).map(recursivelyCheckLoop).head
-    val after = checkAvailabilityForBool(condition)
+        val a = (Loop(cond, newElems), res)
+        println(s"$a $aboba")
+        a
+      case elem =>
+        println(s"$elem $availability")
+        elem
+    }).map(recursivelyCheckLoop(condition, _)).head
+    val after = condition match {
+      case ExpEq(l, r) =>
+        val a = isAvailable(r)
+        a
+      case ExpLe(l, r) =>
+        val a = isAvailable(r)
+        a
+      case _ => true
+    }
     (newBody, before && after)
 
-  def recursivelyCheckLoop(body: List[(Node, Boolean)]): List[(Node, Boolean)] =
-    body.map {
-      case elem@(Assignment(id, value), _) => (elem._1, checkAvailabilityForAssignment(id, value))
+  def recursivelyCheckLoop(condition: Bool, body: List[(Node, Boolean)]): List[(Node, Boolean)] =
+    val aBefore = availability
+    val before = checkAvailabilityForBool(condition)
+    println(s"$condition $availability")
+    val a = body.map {
+      case elem@(Assignment(id, value), _) =>
+        val aboba = availability
+        val a = (elem._1, checkAvailabilityForAssignment(id, value))
+        println(s"$a $aboba")
+        a
+
       case elem@(Condition(condition, left, right), _) =>
+        val aboba = availability
         val (res, newLeft, newRight) = checkAvailabilityForCondition(condition, left, right)
-        (Condition(condition, newLeft, newRight), res)
+
+        val a = (Condition(condition, newLeft, newRight), res)
+        println(s"$a $aboba")
+        a
       case elem@(Loop(cond, elems), _) =>
+        val aboba = availability
         val (newElems, res) = checkAvailabilityForLoop(cond, elems)
-        (Loop(cond, newElems), res)
-      case elem => elem
+        val a =  (Loop(cond, newElems), res)
+        println(s"$a $aboba")
+        a
+      case elem =>
+        println(s"$elem $availability")
+        elem
     }
+    a
 
   def removeAvailability(id: String): Unit =
     val newAvailability = availability.filter { elem =>
@@ -146,14 +210,29 @@ extension (stmt: Statement)(using env: Map[String, Int])
         case Id(innerId) if innerId == id => false
         case ExpSum(left, right) => (left, right) match {
           case (Id(left), Id(right)) if left == id || right == id => false
+          case (Id(left), ExpSub(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSub(leftI: Id, rightI: Integer)) if leftI.id == id  => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Integer)) if leftI.id == id  => false
           case _ => true
         }
         case ExpSub(left, right) => (left, right) match {
-          case (Id(left), Id(right)) if left == id || right == id => false
+          case (Id(left), Id(right)) if left == id || right == id =>
+            false
+          case (Id(left), ExpSub(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSub(leftI: Id, rightI: Integer)) if leftI.id == id  => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Integer)) if leftI.id == id  => false
+          case (Id(left), Integer(aboba)) if left == id  =>
+            false
           case _ => true
         }
         case ExpMult(left, right) => (left, right) match {
           case (Id(left), Id(right)) if left == id || right == id => false
+          case (Id(left), ExpSub(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Id)) if leftI.id == id || rightI.id == id => false
+          case (Id(left), ExpSub(leftI: Id, rightI: Integer)) if leftI.id == id  => false
+          case (Id(left), ExpSum(leftI: Id, rightI: Integer)) if leftI.id == id  => false
           case _ => true
         }
         case _ => true
